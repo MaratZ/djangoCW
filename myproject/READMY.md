@@ -21,13 +21,12 @@ poetry env
 2. Установите библиотеки Flake8, black, isort, mypy в группу lint.
 
 ```commandline
-poetry add --group lint flake8
-poetry add --group lint black
-poetry add --group lint isort
-poetry add --group lint mypy
+pip install black
+pip install isort
+pip install mypy
 ```
 
-3. Создайте файл .flake8 для настройки библиотеки flak8
+3. Создайте файл .flake8 для настройки библиотеки flake8
 
 
 4. Настройте установленные библиотеки, используя кода ниже
@@ -41,11 +40,11 @@ max-line-length = 119
 
 5. Установите требуемые библиотеки:
 ````commandline
-poetry add requests
-poetry add python-dotenv
-poetry add psycopg2
-poetry add django
-poetry add redis
+pip install requests
+pip install python-dotenv
+pip install psycopg2
+pip install django
+pip install redis
 ````
 
 6. Инициализируйте django-проект внутри текущей директории

@@ -1,4 +1,4 @@
-# flake8: noqa
+# .flake8: noqa
 from django.db import models
 
 from users.models import User

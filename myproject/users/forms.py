@@ -1,4 +1,4 @@
-# flake8: noqa
+# .flake8: noqa
 from django import forms
 from django.contrib.auth.forms import (
     PasswordResetForm,

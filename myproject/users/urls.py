@@ -17,7 +17,7 @@ from users.views import (
     user_logout,
 )
 
-# flake8: noqa
+# .flake8: noqa
 app_name = UsersConfig.name
 
 urlpatterns = [

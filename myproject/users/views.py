@@ -107,7 +107,7 @@ class UserPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView
         return context
 
 
-# flake8: noqa
+# .flake8: noqa
 class UserForgotPasswordView(SuccessMessageMixin, PasswordResetView):
     """Представление по сбросу пароля по почте"""
 
