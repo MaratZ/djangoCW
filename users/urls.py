@@ -1,39 +1,20 @@
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib.auth import views as auth_views
-from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import path
-from django.views.decorators.cache import cache_page
 
-from users.apps import UsersConfig
-from users.views import (
-    PasswordRecoveryView,
-    UserCreateView,
-    UserDeleteView,
-    UserDetailView,
-    UserListView,
-    UserUpdateView,
-    email_verification,
-    user_logout,
-)
+from .views import (ChangeUserStatusView, CustomLoginView, CustomLogoutView, EditProfileUpdateView,
+                    PasswordResetConfirmView, PasswordResetRequestView, RegisterView, UserProfileDetailView,
+                    UsersListView, email_verification)
 
-# .flake8: noqa
-app_name = UsersConfig.name
+app_name = "users"
 
 urlpatterns = [
-    path("login/", LoginView.as_view(template_name="login.html"), name="login"),
-    path("logout/", user_logout, name="logout"),
-    path(
-        "password_reset/", auth_views.PasswordResetView.as_view(), name="reset_password"
-    ),
+    path("login/", CustomLoginView.as_view(), name="login"),
+    path("logout/", CustomLogoutView.as_view(), name="logout"),
+    path("register/", RegisterView.as_view(), name="register"),
     path("email-confirm/<str:token>/", email_verification, name="email-confirm"),
-    path("register/", UserCreateView.as_view(), name="register"),
-    path("users/", UserListView.as_view(), name="user_list"),
-    path("detail/<int:pk>/", UserDetailView.as_view(), name="user_detail"),
-    path("update/<int:pk>/", UserUpdateView.as_view(), name="user_update"),
-    path("delete/<int:pk>/", UserDeleteView.as_view(), name="user_delete"),
-    path(
-        "password-recovery/", PasswordRecoveryView.as_view(), name="password_recovery"
-    ),
-    # path("attempt/", cache_page(60)(MailingAttemptListView.as_view()), name="attempt"),
+    path("all-users/", UsersListView.as_view(), name="all-users"),
+    path("user-profile/<int:pk>/", UserProfileDetailView.as_view(), name="user-profile"),
+    path("edit-profile/<int:pk>/", EditProfileUpdateView.as_view(), name="edit-profile"),
+    path("change-status/<int:pk>/", ChangeUserStatusView.as_view(), name="change-status"),
+    path("reset-password/", PasswordResetRequestView.as_view(), name="reset-password"),
+    path("reset-password-confirm/<str:token>/", PasswordResetConfirmView.as_view(), name="reset-password-confirm"),
 ]

@@ -1,135 +1,85 @@
-# .flake8: noqa
 from django.db import models
 
-from users.models import User
+from users.models import CustomUser
 
 
-class ReceiveMail(models.Model):
-    """Модель «Получатель рассылки»:"""
-
-    mail = models.EmailField(max_length=255, verbose_name="Письмо", unique=True)
-    fio = models.CharField(max_length=255, verbose_name="ФИО")
-    comment = models.TextField(verbose_name="Комментарии", null=True, blank=True)
-    is_active = models.BooleanField(default=True, verbose_name="активность")
+class MailReceiver(models.Model):
+    email = models.EmailField(unique=True, verbose_name="Email")
+    full_name = models.CharField(max_length=100)
+    comment = models.TextField()
     owner = models.ForeignKey(
-        User,
-        verbose_name="Получатель",
-        help_text="укажите получателя рассылки",
-        blank=True,
-        null=True,
-        on_delete=models.SET_NULL,
+        CustomUser, on_delete=models.CASCADE, related_name="mailing_receivers", null=True, blank=True
     )
 
     def __str__(self):
-        return f"{self.fio} {self.mail} "
+        return f"{self.email}: {self.full_name}"
 
     class Meta:
-        verbose_name = "получатель"
-        verbose_name_plural = "получатели"
-        ordering = ["fio"]
-        permissions = [
-            ("can_blocking_client", "Может блокировать получателя"),
-        ]
+        verbose_name = "Mail Receiver"
+        verbose_name_plural = "Mail Receivers"
+        ordering = ["email"]
 
 
 class Message(models.Model):
-    """Модель «Сообщение»:"""
+    title = models.CharField(max_length=100)
+    body = models.TextField()
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
 
-    subject = models.CharField(max_length=255, verbose_name="Тема письма")
-    content = models.TextField(verbose_name="Содержимое письма")
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Message"
+        verbose_name_plural = "Messages"
+        ordering = ["title"]
+
+
+class MailingUnit(models.Model):
+    FINISHED = "Finished"
+    CREATED = "Created"
+    LAUNCHED = "Launched"
+
+    STATUS_CHOICES = [(FINISHED, "Finished"), (CREATED, "Created"), (LAUNCHED, "Launched")]
+
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="Created")
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="message")
+    receivers = models.ManyToManyField(MailReceiver, related_name="mailing_units")
     owner = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец"
+        CustomUser, on_delete=models.CASCADE, related_name="mailing_units", null=True, blank=True
     )
 
     def __str__(self):
-        return self.content
+        return f"{self.message}: {self.status}"
 
     class Meta:
-        verbose_name = "письмо"
-        verbose_name_plural = "письма"
-        ordering = ["subject"]
-        permissions = [
-            ("can_blocking_sms", "Может блокировать сообщение"),
+        verbose_name = "Mailing Unit"
+        verbose_name_plural = "Mailing Units"
+        ordering = ["-status", "started_at"]
+        permissions = [("can_disable_mailing", "Can disable mailing")]
+
+
+class MailingAttempt(models.Model):
+    SUCCESS = "Success"
+    FAILED = "Failed"
+
+    STATUS_CHOICES = [(SUCCESS, "Success"), (FAILED, "Failed")]
+
+    attempt_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    server_answer = models.TextField()
+    mailing = models.ForeignKey(MailingUnit, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.mailing}: {self.status} ({self.attempt_at})"
+
+    class Meta:
+        verbose_name = "Mailing Attempt"
+        verbose_name_plural = "Mailing Attempts"
+        ordering = [
+            "-attempt_at",
+            "mailing",
+            "status",
         ]
-
-
-class Mailing(models.Model):
-    """Модель «Рассылка»:"""
-
-    CREATED = "Создано"
-    LAUNCHED = "Запущено"
-    FINISHED = "Завершена"
-
-    STATUS_CHOICES = [
-        (CREATED, "Создано"),
-        (LAUNCHED, "Запущено"),
-        (FINISHED, "Завершена"),
-    ]
-
-    first_sending = models.DateTimeField(
-        verbose_name="Дата первой отправки", null=True, blank=True
-    )
-    end_sending = models.DateTimeField(
-        verbose_name="Дата окончания отправки", null=True, blank=True
-    )
-
-    status = models.CharField(
-        max_length=11,
-        choices=STATUS_CHOICES,
-        default=CREATED,
-        verbose_name="Статус рассылки",
-    )
-    is_active = models.BooleanField(
-        default=True, verbose_name="активна", null=True, blank=True
-    )
-    message = models.ForeignKey(
-        Message,
-        on_delete=models.CASCADE,
-        verbose_name="Сообщение",
-        related_name="mailings",
-        null=True,
-        blank=True,
-    )
-    client = models.ManyToManyField(
-        ReceiveMail,
-        verbose_name="Клиент",
-    )
-    owner = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец"
-    )
-
-    def __str__(self):
-        return f"{self.id}"
-
-    class Meta:
-        verbose_name = "Рассылка"
-        verbose_name_plural = "Рассылки"
-        ordering = ["first_sending"]
-        permissions = [
-            ("set_is_active", "set is active"),
-        ]
-
-
-class AttemptMailing(models.Model):
-    """Модель «Попытка рассылки»"""
-
-    date_attempt = models.DateTimeField(verbose_name="Дата и время попытки")
-    status = models.CharField(max_length=115, verbose_name="Статус попытки")
-    response = models.TextField(verbose_name="Комментарии", null=True, blank=True)
-    mailing = models.ForeignKey(
-        Mailing,
-        on_delete=models.CASCADE,
-        verbose_name="Рассылка",
-        related_name="mailing",
-    )
-    owner = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец"
-    )
-
-    def __str__(self):
-        return f'{self.date_attempt} "{self.status}" '
-
-    class Meta:
-        verbose_name = "попытка"
-        verbose_name_plural = "попытки"
-        ordering = ["date_attempt", "status"]
+        permissions = [("can_view_report", "Can view report")]

@@ -1,21 +1,9 @@
 from django.contrib import admin
 
-from users.models import User
-
-# Register your models here.
+from .models import CustomUser
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "avatar",
-        "email",
-        "first_name",
-        "last_name",
-        "middle_name",
-        "phone",
-        "country",
-    )
+@admin.register(CustomUser)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("email",)
     search_fields = ("email",)
-    list_filter = ("email",)

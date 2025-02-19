@@ -1,55 +1,43 @@
 from django.contrib import admin
 
-from mailing.models import AttemptMailing, Mailing, Message, ReceiveMail
-
-# Register your models here.
+from .models import MailingAttempt, MailingUnit, MailReceiver, Message
 
 
-@admin.register(ReceiveMail)
-class ReceiveMailAdmin(admin.ModelAdmin):
-    list_display = ("id", "fio", "mail", "comment", "owner")
-    list_filter = ("fio",)
-    search_fields = (
-        "fio",
-        "mail",
-    )
+@admin.register(MailReceiver)
+class MailReceiverAdmin(admin.ModelAdmin):
+    list_display = ("email", "full_name")
+    search_fields = ("email", "full_name", "comment")
+
+
+@admin.register(MailingUnit)
+class MailingUnitAdmin(admin.ModelAdmin):
+    list_display = ("message", "status", "started_at", "finished_at", "get_receivers")
+    list_filter = ["status"]
+    search_fields = ("status", "get_receivers")
+    exclude = ("finished_at",)
+
+    @admin.display(description="Тема")
+    def get_title(self, obj):
+        return obj.message.get(obj.pk)
+
+    @admin.display(description="Получатели")
+    def get_receivers(self, obj):
+        return [f"{receiver.full_name}: {receiver.email}" for receiver in obj.receivers.all()]
+
+
+@admin.register(MailingAttempt)
+class MailingAttemptAdmin(admin.ModelAdmin):
+    list_display = ("status", "get_receiver", "attempt_at")
+    list_filter = ["attempt_at", "status"]
+    search_fields = ("status",)
+    exclude = ("mailing",)
+
+    @admin.display(description="Получатель")
+    def get_receiver(self, obj):
+        return obj.server_answer.split()[-1] if obj.mailing.receivers.exists() else "Нет получателя"
 
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "subject",
-        "content",
-        "owner",
-    )
-    search_fields = ("subject",)
-    list_filter = ("subject",)
-
-
-@admin.register(Mailing)
-class MailingAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "first_sending",
-        "end_sending",
-        "status",
-        "message",
-        "is_active",
-        "owner",
-    )
-    search_fields = ("status",)
-    list_filter = ("status",)
-
-
-@admin.register(AttemptMailing)
-class MailingAttemptAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "owner",
-        "response",
-        "date_attempt",
-        "status",
-    )
-    search_fields = ("owner",)
-    list_filter = ("owner",)
+    list_display = ("title",)
+    search_fields = ("title",)
