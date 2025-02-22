@@ -10,7 +10,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import DetailView, ListView, UpdateView, View
 from django.views.generic.edit import FormView
 
-from .forms import CustomUserCreationForm, EditProfileForm, PasswordResetConfirmForm, PasswordResetRequestForm
+from .forms import CustomUserCreationForm, UserRegisterForm, EditProfileForm, PasswordResetConfirmForm, PasswordResetRequestForm
 from .logger import users_logger
 from .models import CustomUser
 from .services import CACHE_TIMEOUT, CustomUserService

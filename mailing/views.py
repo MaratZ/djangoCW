@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView, View
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView, View, TemplateView
 
 from users.services import CustomUserService
 
@@ -18,6 +18,22 @@ from .models import MailingAttempt, MailingUnit, MailReceiver, Message
 from .services import CACHE_TIMEOUT, MailingAttemptService, MailingUnitService, MailReceiverService, MessageService
 
 
+def base(request):
+
+    return render(request, "base.html")
+# Главная страница
+class homeView(TemplateView):
+    template_name = "mailing/home.html"
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data["title"] = "Главная"
+        context_data["count_mailing"] = len(mailing.objects.all())
+        active_mailings_count = mailing.objects.filter(status="Создано").count()
+        context_data["active_mailings_count"] = active_mailings_count
+        unique_clients_count = MailReceiverForm.objects.distinct().count()
+        context_data["unique_clients_count"] = unique_clients_count
+        return context_data
 class MailingView(LoginRequiredMixin, View):
 
     def get(self, request):
