@@ -1,8 +1,6 @@
-import logging
 import os
 from pathlib import Path
 
-import colorlog
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG")
+DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -133,45 +131,6 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-LOG_LEVEL = logging.DEBUG
-
-LOG_FORMAT = "%(log_color)s%(levelname)s: %(asctime)s: %(message)s"
-
-LOG_COLORS = {
-    "DEBUG": "cyan",
-    "INFO": "green",
-    "WARNING": "yellow",
-    "ERROR": "red",
-    "CRITICAL": "bold_red",
-}
-
-formatter = colorlog.ColoredFormatter(LOG_FORMAT, log_colors=LOG_COLORS)
-
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "colored",
-        },
-    },
-    "formatters": {
-        "colored": {
-            "()": colorlog.ColoredFormatter,
-            "format": LOG_FORMAT,
-            "log_colors": LOG_COLORS,
-        },
-    },
-    "loggers": {
-        "": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-            "propagate": True,
-        },
-    },
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

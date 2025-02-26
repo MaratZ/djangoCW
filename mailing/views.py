@@ -13,23 +13,22 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from users.services import CustomUserService
 
 from .forms import MailingUnitForm, MailReceiverForm, MessageForm
-from .logger import mail_logger
 from .models import MailingAttempt, MailingUnit, MailReceiver, Message
 from .services import CACHE_TIMEOUT, MailingAttemptService, MailingUnitService, MailReceiverService, MessageService
 
 
 def base(request):
-
     return render(request, "base.html")
 # Главная страница
-class homeView(TemplateView):
-    template_name = "mailing/home.html"
+
+    class homeView(TemplateView):
+        template_name = "mailing/home.html"
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data["title"] = "Главная"
-        context_data["count_mailing"] = len(mailing.objects.all())
-        active_mailings_count = mailing.objects.filter(status="Создано").count()
+        context_data["count_mailing"] = len(MailingUnit.objects.all())
+        active_mailings_count = MailingUnit.objects.filter(status="Создано").count()
         context_data["active_mailings_count"] = active_mailings_count
         unique_clients_count = MailReceiverForm.objects.distinct().count()
         context_data["unique_clients_count"] = unique_clients_count
@@ -41,18 +40,10 @@ class MailingView(LoginRequiredMixin, View):
             all_mailings = MailingUnitService.get_all_mailing_units(count=True)
             launched_mailings = MailingUnitService.get_all_launched_mailing_units(count=True)
             unique_receivers = MailReceiverService.get_all_mail_receivers(count=True)
-            mail_logger.info(
-                f"""Counted all mailings, launched mailings and unique
-            receivers for manager {self.request.user}"""
-            )
         else:
             all_mailings = MailingUnitService.get_owner_mailing_units(request.user.id, count=True)
             launched_mailings = MailingUnitService.get_owner_launched_mailing_units(request.user.id, count=True)
             unique_receivers = MailReceiverService.get_owner_mail_receivers(request.user.id, count=True)
-            mail_logger.info(
-                f"""Counted user-specific mailings, launched mailings
-            and unique receivers for user {self.request.user}"""
-            )
 
         context = {
             "all_mailings": all_mailings,
@@ -70,9 +61,7 @@ class MailReceiverListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         if self.request.user.has_perm("mailing.view_mailreceiver"):
-            mail_logger.info(f"Manager {self.request.user} is viewing all mail receivers")
             return MailReceiverService.get_all_mail_receivers()
-        mail_logger.info(f"User {self.request.user} is viewing their mail receivers")
         return MailReceiverService.get_owner_mail_receivers(self.request.user.id)
 
 
@@ -92,7 +81,6 @@ class MailReceiverCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        mail_logger.info(f"User {self.request.user} created a new mail receiver {form.instance}")
         return super().form_valid(form)
 
 
@@ -123,7 +111,6 @@ class MessageListView(LoginRequiredMixin, ListView):
     context_object_name = "all_messages"
 
     def get_queryset(self):
-        mail_logger.info(f"User {self.request.user} is viewing their messages")
         return MessageService.get_owner_messages(self.request.user.id)
 
 
@@ -143,7 +130,6 @@ class MessageCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        mail_logger.info(f"User {self.request.user} created a new message")
         return super().form_valid(form)
 
 
@@ -174,9 +160,7 @@ class MailingUnitListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         if self.request.user.has_perm("mailing.view_mailingunit"):
-            mail_logger.info(f"Manager {self.request.user} is viewing all mailing units")
             return MailingUnitService.get_all_mailing_units()
-        mail_logger.info(f"User {self.request.user} is viewing their mailing units")
         return MailingUnitService.get_owner_mailing_units(self.request.user.id)
 
 
@@ -195,7 +179,6 @@ class MailingUnitCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        mail_logger.info(f"User {self.request.user} created a new mailing unit")
         return super().form_valid(form)
 
 
@@ -227,7 +210,6 @@ class MailingUnitSendMailView(LoginRequiredMixin, View):
         mailing_unit = get_object_or_404(MailingUnit, pk=pk)
         self.send_emails(mailing_unit)
         self.update_status(mailing_unit, "Launched")
-        mail_logger.info(f"User {self.request.user} sent emails for mailing unit {mailing_unit.message}")
         return redirect("mailing:mailing-units-list")
 
     def send_emails(self, mailing_unit):
@@ -274,7 +256,6 @@ class MailingUnitStopMailView(LoginRequiredMixin, View):
         mailing_unit.status = "Finished"
         mailing_unit.finished_at = timezone.now()
         mailing_unit.save()
-        mail_logger.info(f"User {self.request.user} stopped mailing unit {mailing_unit}")
         return redirect("mailing:mailing-units-list")
 
 
@@ -325,5 +306,4 @@ class ReportView(LoginRequiredMixin, PermissionRequiredMixin, View):
         context = {
             "user_attempts": user_attempts,
         }
-        mail_logger.info(f"Manager {self.request.user} is viewing the report")
         return render(request, "mailing/reports.html", context)

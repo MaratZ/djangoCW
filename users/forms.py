@@ -3,6 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from mailing.forms import StyleFormMixin
 from .models import CustomUser
 
+
+
 class UserRegisterForm(StyleFormMixin, UserCreationForm):
     class Meta:
         model = CustomUser
